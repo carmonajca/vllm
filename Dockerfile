@@ -138,5 +138,12 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 ENV VLLM_USAGE_SOURCE production-docker-image
 
-ENTRYPOINT ["python3", "-m", "vllm.entrypoints.openai.api_server"]
 #################### OPENAI API SERVER ####################
+# base server
+FROM vllm-openai AS vllm-openai-base
+ENTRYPOINT ["python3", "-m", "vllm.entrypoints.openai.api_server"]
+
+# llama3 server
+FROM vllm-openai AS vllm-openai-llama3
+RUN ["python3", "-m", "uvicorn", "use_server:app", "--host", "0.0.0.0", "--port", "8800", "--reload"]  # usage server
+ENTRYPOINT ["python3", "-m", "vllm.entrypoints.openai.api_server", "--model", "meta-llama/Meta-Llama-3-70B-Instruct", "--dtype=float16", "--tensor-parallel-size", "8"]
